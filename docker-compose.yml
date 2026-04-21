@@ -1,0 +1,37 @@
+services:
+  mongo:
+    image: mongo:latest
+    container_name: smartcity-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo_data:/data/db
+    networks:
+      - smartcity-net
+
+  nodered:
+    image: nodered/node-red:latest
+    container_name: smartcity-nodered
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - "1880:1880"
+    volumes:
+      - ./node_red_data:/data
+      - ./SmartCityClimate.Flow.json:/data/assignment/SmartCityClimate.Flow.json:ro
+    command: >
+      bash -lc "
+      cd /data &&
+      if [ ! -d node_modules/node-red-dashboard ] || [ ! -d node_modules/node-red-contrib-mongodb3 ]; then
+        npm install --unsafe-perm --no-update-notifier --no-fund --only=production \
+          node-red-dashboard node-red-contrib-mongodb3;
+      fi &&
+      node-red"
+    networks:
+      - smartcity-net
+
+networks:
+  smartcity-net:
+    name: smartcity-net
