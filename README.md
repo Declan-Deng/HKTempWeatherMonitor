@@ -13,10 +13,33 @@ The system fetches official HKO open data, stores normalized records in MongoDB,
 
 - `docker-compose.yml`: reproducible runtime for MongoDB and Node-RED
 - `SmartCityClimate.Flow.json`: exported Node-RED flow
+- `FLOW_OVERVIEW.md`: explanation of where the actual logic lives inside the flow
 - `Project_Report_SmartCityClimate.md`: written report for the assignment
 - `docker-description.md`: Docker reproduction notes
 - `node_red_data/`: preloaded Node-RED workspace so the flow is ready after startup
 - `submission/COMP7503C_Group_Assignment_FINAL.zip`: final submission package
+
+## Where The Code Actually Is
+
+This project is not a traditional multi-file JavaScript app. It is a Node-RED project, so most of the implementation logic lives inside the flow JSON files:
+
+- `SmartCityClimate.Flow.json`
+- `node_red_data/flows.json`
+
+These two files contain the same flow logic in two forms:
+
+- `SmartCityClimate.Flow.json`: clean exported flow for assignment submission
+- `node_red_data/flows.json`: the runtime copy automatically loaded by Node-RED on startup
+
+Inside the flow there are 8 `function` nodes containing the main JavaScript logic, including:
+
+- realtime snapshot normalization
+- forecast normalization
+- 24-hour MongoDB query construction
+- chart formatting
+- correlation calculation
+
+The `submission/COMP7503C_Group_Assignment_FINAL.zip` file is only the final hand-in package. It does not contain hidden extra logic beyond the files already present in the repository.
 
 ## Data Sources
 
