@@ -1,0 +1,789 @@
+[
+    {
+        "id": "9f6b2c4a.d1e3f8",
+        "type": "tab",
+        "label": "Smart Climate Insights",
+        "disabled": false,
+        "info": "Smart city use case: Urban heat + rainfall risk monitoring using Hong Kong open data streams."
+    },
+    {
+        "id": "cfg.mongo",
+        "type": "mongodb3",
+        "z": "",
+        "uri": "mongodb://smartcity-mongo:27017/smartcity",
+        "name": "SmartCityMongo",
+        "options": "",
+        "parallelism": "-1"
+    },
+    {
+        "id": "cfg.ui.base",
+        "type": "ui_base",
+        "theme": {
+            "name": "theme-dark",
+            "lightTheme": {
+                "default": "#0094CE",
+                "baseColor": "#0094CE",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": true,
+                "reset": false
+            },
+            "darkTheme": {
+                "default": "#097479",
+                "baseColor": "#097479",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": true,
+                "reset": false
+            },
+            "customTheme": {
+                "name": "SmartClimate",
+                "default": "#1f6f8b",
+                "baseColor": "#1f6f8b",
+                "baseFont": "Arial,Arial,Helvetica,sans-serif",
+                "reset": false
+            },
+            "themeState": {
+                "base-color": {
+                    "default": "#097479",
+                    "value": "#1f6f8b",
+                    "edited": true
+                },
+                "page-titlebar-backgroundColor": {
+                    "value": "#1f6f8b",
+                    "edited": true
+                },
+                "page-backgroundColor": {
+                    "value": "#111111",
+                    "edited": true
+                },
+                "page-sidebar-backgroundColor": {
+                    "value": "#000000",
+                    "edited": false
+                },
+                "group-textColor": {
+                    "value": "#0eb8c0",
+                    "edited": true
+                },
+                "group-borderColor": {
+                    "value": "#555555",
+                    "edited": false
+                },
+                "group-backgroundColor": {
+                    "value": "#333333",
+                    "edited": true
+                },
+                "widget-textColor": {
+                    "value": "#eeeeee",
+                    "edited": true
+                },
+                "widget-backgroundColor": {
+                    "value": "#1f6f8b",
+                    "edited": true
+                },
+                "widget-borderColor": {
+                    "value": "#333333",
+                    "edited": true
+                },
+                "base-font": {
+                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+                }
+            },
+            "angularTheme": {
+                "primary": "indigo",
+                "accents": "blue",
+                "warn": "red",
+                "background": "grey"
+            }
+        },
+        "site": {
+            "name": "Node-RED Dashboard",
+            "hideToolbar": "false",
+            "allowSwipe": "false",
+            "lockMenu": "false",
+            "allowTempTheme": "true",
+            "dateFormat": "DD/MM/YYYY",
+            "sizes": {
+                "sx": 48,
+                "sy": 48,
+                "gx": 6,
+                "gy": 6,
+                "cx": 6,
+                "cy": 6,
+                "px": 0,
+                "py": 0
+            }
+        }
+    },
+    {
+        "id": "ui.tab.smart",
+        "type": "ui_tab",
+        "z": "",
+        "name": "Smart Climate",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "ui.group.heat",
+        "type": "ui_group",
+        "z": "",
+        "name": "Heat Stress (24h)",
+        "tab": "ui.tab.smart",
+        "order": 1,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "ui.group.rain",
+        "type": "ui_group",
+        "z": "",
+        "name": "Rainfall Pressure (24h)",
+        "tab": "ui.tab.smart",
+        "order": 2,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "ui.group.forecast",
+        "type": "ui_group",
+        "z": "",
+        "name": "9-Day Forecast",
+        "tab": "ui.tab.smart",
+        "order": 3,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "inj.rt.poll",
+        "type": "inject",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Poll Realtime Weather (1m)",
+        "topic": "Timer",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "60",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "x": 210,
+        "y": 80,
+        "wires": [
+            [
+                "fn.rt.last.query"
+            ]
+        ]
+    },
+    {
+        "id": "fn.rt.last.query",
+        "type": "function",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Build Last Realtime Query",
+        "func": "msg.payload = [\n    {\n        \"$query\": {}\n    },\n    {\n        \"sort\": {\n            \"_id\": -1\n        }\n    }\n];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 450,
+        "y": 80,
+        "wires": [
+            [
+                "db.rt.last"
+            ]
+        ]
+    },
+    {
+        "id": "db.rt.last",
+        "type": "mongodb3 in",
+        "z": "9f6b2c4a.d1e3f8",
+        "service": "_ext_",
+        "configNode": "cfg.mongo",
+        "name": "Get Last Realtime Record",
+        "collection": "UrbanClimateRealtime",
+        "operation": "findOne",
+        "x": 710,
+        "y": 80,
+        "wires": [
+            [
+                "fn.rt.store.last"
+            ]
+        ]
+    },
+    {
+        "id": "fn.rt.store.last",
+        "type": "function",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Store Last Realtime updateTime",
+        "func": "if (msg.payload && msg.payload.updateTime) {\n    flow.set('lastRealtimeUpdateTime', msg.payload.updateTime);\n} else {\n    flow.set('lastRealtimeUpdateTime', \"\");\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1000,
+        "y": 80,
+        "wires": [
+            [
+                "http.rt"
+            ]
+        ]
+    },
+    {
+        "id": "http.rt",
+        "type": "http request",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "GET rhrread",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": false,
+        "url": "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=en",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 210,
+        "y": 150,
+        "wires": [
+            [
+                "json.rt"
+            ]
+        ]
+    },
+    {
+        "id": "json.rt",
+        "type": "json",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Parse Realtime JSON",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 430,
+        "y": 150,
+        "wires": [
+            [
+                "fn.rt.normalize"
+            ]
+        ]
+    },
+    {
+        "id": "fn.rt.normalize",
+        "type": "function",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Normalize Realtime Snapshot",
+        "func": "const raw = msg.payload || {};\nconst last = flow.get('lastRealtimeUpdateTime') || \"\";\nconst updateISO = raw.updateTime ? new Date(raw.updateTime).toISOString() : \"\";\nconst sourceUpdated = !!updateISO && updateISO > last;\n\n// Incremental mode: only insert when source updateTime changes.\nif (!sourceUpdated) {\n    return null;\n}\nflow.set('lastRealtimeUpdateTime', updateISO);\n\nfunction toNumber(v) {\n    const n = Number(v);\n    return Number.isFinite(n) ? n : null;\n}\n\nfunction avg(nums) {\n    if (!nums.length) return null;\n    return nums.reduce((s, v) => s + v, 0) / nums.length;\n}\n\nconst tempRows = Array.isArray(raw.temperature && raw.temperature.data) ? raw.temperature.data : [];\nconst humidityRows = Array.isArray(raw.humidity && raw.humidity.data) ? raw.humidity.data : [];\nconst rainfallRows = Array.isArray(raw.rainfall && raw.rainfall.data) ? raw.rainfall.data : [];\n\nconst tempValues = tempRows\n    .map((row) => ({ place: row.place || \"Unknown\", value: toNumber(row.value) }))\n    .filter((row) => row.value !== null);\n\nconst humidityValues = humidityRows\n    .map((row) => toNumber(row.value))\n    .filter((v) => v !== null);\n\nconst rainfallValues = rainfallRows\n    .map((row) => ({ place: row.place || \"Unknown\", value: toNumber(row.max) }))\n    .filter((row) => row.value !== null);\n\nconst tempNums = tempValues.map((row) => row.value);\nconst avgTemp = avg(tempNums);\nconst avgHumidity = avg(humidityValues);\nconst maxRainfallRow = rainfallValues.length ? rainfallValues.reduce((a, b) => (a.value >= b.value ? a : b)) : null;\nconst hottestRow = tempValues.length ? tempValues.reduce((a, b) => (a.value >= b.value ? a : b)) : null;\n\nlet heatStress = null;\nif (avgTemp !== null && avgHumidity !== null) {\n    const rainfallFactor = maxRainfallRow ? Math.min(maxRainfallRow.value, 30) : 0;\n    heatStress = Math.round(Math.max(0, Math.min(100, (avgTemp * 2.2) + (avgHumidity * 0.45) + (rainfallFactor * 0.9) - 20)));\n}\n\nlet riskLevel = \"Unknown\";\nif (heatStress !== null) {\n    if (heatStress >= 80) {\n        riskLevel = \"Severe\";\n    } else if (heatStress >= 65) {\n        riskLevel = \"High\";\n    } else if (heatStress >= 45) {\n        riskLevel = \"Moderate\";\n    } else {\n        riskLevel = \"Low\";\n    }\n}\n\nmsg.payload = {\n    updateTime: updateISO,\n    collectedAt: new Date().toISOString(),\n    sourceUpdated: true,\n    stationCount: tempValues.length,\n    avgTemp: avgTemp !== null ? Number(avgTemp.toFixed(2)) : null,\n    minTemp: tempNums.length ? Number(Math.min.apply(null, tempNums).toFixed(2)) : null,\n    maxTemp: tempNums.length ? Number(Math.max.apply(null, tempNums).toFixed(2)) : null,\n    avgHumidity: avgHumidity !== null ? Number(avgHumidity.toFixed(2)) : null,\n    maxRainfall: maxRainfallRow ? Number(maxRainfallRow.value.toFixed(2)) : null,\n    maxRainfallDistrict: maxRainfallRow ? maxRainfallRow.place : null,\n    hottestStation: hottestRow ? hottestRow.place : null,\n    heatStress: heatStress,\n    riskLevel: riskLevel\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 710,
+        "y": 150,
+        "wires": [
+            [
+                "db.rt.insert"
+            ]
+        ]
+    },
+    {
+        "id": "db.rt.insert",
+        "type": "mongodb3 in",
+        "z": "9f6b2c4a.d1e3f8",
+        "service": "_ext_",
+        "configNode": "cfg.mongo",
+        "name": "Insert Realtime Snapshot",
+        "collection": "UrbanClimateRealtime",
+        "operation": "insert",
+        "x": 1220,
+        "y": 180,
+        "wires": [
+            [
+                "dbg.rt.insert"
+            ]
+        ]
+    },
+    {
+        "id": "dbg.rt.insert",
+        "type": "debug",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Realtime Inserted",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "x": 1450,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "inj.fc.poll",
+        "type": "inject",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Poll 9-Day Forecast (6h)",
+        "topic": "Timer",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "21600",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "5",
+        "x": 220,
+        "y": 320,
+        "wires": [
+            [
+                "http.fc"
+            ]
+        ]
+    },
+    {
+        "id": "http.fc",
+        "type": "http request",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "GET 9-Day Forecast",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": false,
+        "url": "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=en",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 460,
+        "y": 320,
+        "wires": [
+            [
+                "json.fc"
+            ]
+        ]
+    },
+    {
+        "id": "json.fc",
+        "type": "json",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Parse Forecast JSON",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 690,
+        "y": 320,
+        "wires": [
+            [
+                "fn.fc.normalize"
+            ]
+        ]
+    },
+    {
+        "id": "fn.fc.normalize",
+        "type": "function",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Normalize Forecast",
+        "func": "const raw = msg.payload || {};\nconst list = Array.isArray(raw.weatherForecast) ? raw.weatherForecast : [];\n\nfunction toNumber(v) {\n    const n = Number(v);\n    return Number.isFinite(n) ? n : null;\n}\n\nconst forecast = list.slice(0, 9).map((item) => ({\n    forecastDate: item.forecastDate,\n    week: item.week,\n    minTemp: toNumber(item.forecastMintemp && item.forecastMintemp.value),\n    maxTemp: toNumber(item.forecastMaxtemp && item.forecastMaxtemp.value),\n    minRH: toNumber(item.forecastMinrh && item.forecastMinrh.value),\n    maxRH: toNumber(item.forecastMaxrh && item.forecastMaxrh.value),\n    weather: item.forecastWeather || \"\"\n}));\n\nmsg.payload = {\n    updateTime: new Date().toISOString(),\n    sourceUpdateTime: raw.updateTime || null,\n    forecast: forecast\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 930,
+        "y": 320,
+        "wires": [
+            [
+                "db.fc.insert"
+            ]
+        ]
+    },
+    {
+        "id": "db.fc.insert",
+        "type": "mongodb3 in",
+        "z": "9f6b2c4a.d1e3f8",
+        "service": "_ext_",
+        "configNode": "cfg.mongo",
+        "name": "Insert Forecast Snapshot",
+        "collection": "UrbanClimateForecast",
+        "operation": "insert",
+        "x": 1170,
+        "y": 320,
+        "wires": [
+            [
+                "dbg.fc.insert"
+            ]
+        ]
+    },
+    {
+        "id": "dbg.fc.insert",
+        "type": "debug",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Forecast Inserted",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "x": 1390,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "inj.rt.dashboard",
+        "type": "inject",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Refresh 24h Dashboard (1m)",
+        "topic": "Timer",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "60",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "15",
+        "x": 240,
+        "y": 490,
+        "wires": [
+            [
+                "fn.rt.range.query"
+            ]
+        ]
+    },
+    {
+        "id": "fn.rt.range.query",
+        "type": "function",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Build 24h Query",
+        "func": "const end = new Date();\nconst start = new Date(end.getTime() - 24 * 60 * 60 * 1000);\nmsg.payload = {\n    collectedAt: {\n        $gt: start.toISOString(),\n        $lt: end.toISOString()\n    }\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 470,
+        "y": 490,
+        "wires": [
+            [
+                "db.rt.find.range"
+            ]
+        ]
+    },
+    {
+        "id": "db.rt.find.range",
+        "type": "mongodb3 in",
+        "z": "9f6b2c4a.d1e3f8",
+        "service": "_ext_",
+        "configNode": "cfg.mongo",
+        "name": "Find Realtime (24h)",
+        "collection": "UrbanClimateRealtime",
+        "operation": "find.toArray",
+        "x": 700,
+        "y": 490,
+        "wires": [
+            [
+                "fn.rt.to.charts"
+            ]
+        ]
+    },
+    {
+        "id": "fn.rt.to.charts",
+        "type": "function",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Format Realtime Charts",
+        "func": "const src = msg.payload || [];\nconst rows = Array.isArray(src) ? src.slice() : Object.values(src);\n\nfunction toNumber(v) {\n    const n = Number(v);\n    return Number.isFinite(n) ? n : null;\n}\n\nfunction pearson(data, keyX, keyY) {\n    const pairs = data\n        .map((row) => [toNumber(row[keyX]), toNumber(row[keyY])])\n        .filter((pair) => pair[0] !== null && pair[1] !== null);\n\n    if (pairs.length < 2) {\n        return null;\n    }\n\n    const n = pairs.length;\n    const sumX = pairs.reduce((s, p) => s + p[0], 0);\n    const sumY = pairs.reduce((s, p) => s + p[1], 0);\n    const sumXY = pairs.reduce((s, p) => s + p[0] * p[1], 0);\n    const sumX2 = pairs.reduce((s, p) => s + p[0] * p[0], 0);\n    const sumY2 = pairs.reduce((s, p) => s + p[1] * p[1], 0);\n\n    const numerator = (n * sumXY) - (sumX * sumY);\n    const denomX = (n * sumX2) - (sumX * sumX);\n    const denomY = (n * sumY2) - (sumY * sumY);\n    const denominator = Math.sqrt(denomX * denomY);\n\n    if (!Number.isFinite(denominator) || denominator === 0) {\n        return null;\n    }\n\n    return Number((numerator / denominator).toFixed(4));\n}\n\nfunction displayCorrelation(value) {\n    return value === null ? \"N/A\" : value;\n}\n\nrows.sort((a, b) => new Date(a.collectedAt || a.updateTime).getTime() - new Date(b.collectedAt || b.updateTime).getTime());\n\nconst tempSeries = [];\nconst stressSeries = [];\nconst rainSeries = [];\n\nfor (const row of rows) {\n    const x = new Date(row.collectedAt || row.updateTime || Date.now());\n    const avgTemp = toNumber(row.avgTemp);\n    const heatStress = toNumber(row.heatStress);\n    const maxRain = toNumber(row.maxRainfall);\n\n    if (avgTemp !== null) {\n        tempSeries.push({ x: x, y: avgTemp });\n    }\n    if (heatStress !== null) {\n        stressSeries.push({ x: x, y: heatStress });\n    }\n    if (maxRain !== null) {\n        rainSeries.push({ x: x, y: maxRain });\n    }\n}\n\nconst latest = rows.length ? rows[rows.length - 1] : null;\nconst corrTempStress = pearson(rows, 'avgTemp', 'heatStress');\nconst corrRainStress = pearson(rows, 'maxRainfall', 'heatStress');\nconst rainAxisMax = rainSeries.length ? Math.max.apply(null, rainSeries.map((point) => point.y)) : 0;\nconst rainDisplayMax = rainAxisMax <= 0 ? 1 : Math.max(1, Math.ceil(rainAxisMax * 1.2));\nconst anchorTime = latest ? new Date(latest.collectedAt || latest.updateTime || Date.now()) : new Date();\nconst rainAxisAnchor = [{ x: anchorTime, y: rainDisplayMax }];\n\nconst msgTempStress = {\n    payload: [{\n        series: [\"Avg Temp (C)\", \"Heat Stress\"],\n        data: [tempSeries, stressSeries],\n        labels: [\"\"]\n    }]\n};\n\nconst msgRain = {\n    payload: [{\n        series: [\"Max Rainfall (mm)\", \"Axis Anchor\"],\n        data: [rainSeries, rainAxisAnchor],\n        labels: [\"\"]\n    }]\n};\n\nconst msgSummary = {\n    payload: {\n        points: rows.length,\n        latest: latest,\n        corrTempHeatStress: displayCorrelation(corrTempStress),\n        corrRainHeatStress: displayCorrelation(corrRainStress)\n    }\n};\n\nreturn [msgTempStress, msgRain, msgSummary];",
+        "outputs": 3,
+        "noerr": 0,
+        "x": 940,
+        "y": 490,
+        "wires": [
+            [
+                "chart.heat"
+            ],
+            [
+                "chart.rain"
+            ],
+            [
+                "dbg.rt.summary",
+                "ui.text.latest",
+                "ui.text.risk",
+                "ui.text.rain",
+                "ui.text.corr.temp",
+                "ui.text.corr.rain"
+            ]
+        ]
+    },
+    {
+        "id": "chart.heat",
+        "type": "ui_chart",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "",
+        "group": "ui.group.heat",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "Avg Temp vs Heat Stress",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "1440",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "colors": [
+            "#1f77b4",
+            "#ff7f0e",
+            "#2ca02c",
+            "#d62728",
+            "#9467bd",
+            "#8c564b",
+            "#e377c2",
+            "#7f7f7f",
+            "#bcbd22"
+        ],
+        "useOldStyle": false,
+        "outputs": 1,
+        "x": 1180,
+        "y": 460,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "chart.rain",
+        "type": "ui_chart",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "",
+        "group": "ui.group.rain",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "Max Rainfall (24h)",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "0",
+        "ymax": "",
+        "removeOlder": "24",
+        "removeOlderPoints": "1440",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "colors": [
+            "#17becf",
+            "rgba(0,0,0,0)",
+            "#98df8a",
+            "#c5b0d5",
+            "#c49c94",
+            "#f7b6d2",
+            "#dbdb8d",
+            "#9edae5",
+            "#aec7e8"
+        ],
+        "useOldStyle": false,
+        "outputs": 1,
+        "x": 1170,
+        "y": 520,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "dbg.rt.summary",
+        "type": "debug",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Realtime Dashboard Summary",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "x": 1220,
+        "y": 570,
+        "wires": []
+    },
+    {
+        "id": "inj.fc.dashboard",
+        "type": "inject",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Refresh Forecast Dashboard (6h)",
+        "topic": "Timer",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "21600",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "20",
+        "x": 250,
+        "y": 650,
+        "wires": [
+            [
+                "fn.fc.last.query"
+            ]
+        ]
+    },
+    {
+        "id": "fn.fc.last.query",
+        "type": "function",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Build Last Forecast Query",
+        "func": "msg.payload = [\n    {\n        \"$query\": {}\n    },\n    {\n        \"sort\": {\n            \"_id\": -1\n        }\n    }\n];\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 500,
+        "y": 650,
+        "wires": [
+            [
+                "db.fc.last"
+            ]
+        ]
+    },
+    {
+        "id": "db.fc.last",
+        "type": "mongodb3 in",
+        "z": "9f6b2c4a.d1e3f8",
+        "service": "_ext_",
+        "configNode": "cfg.mongo",
+        "name": "Get Last Forecast Record",
+        "collection": "UrbanClimateForecast",
+        "operation": "findOne",
+        "x": 740,
+        "y": 650,
+        "wires": [
+            [
+                "fn.fc.to.chart"
+            ]
+        ]
+    },
+    {
+        "id": "fn.fc.to.chart",
+        "type": "function",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "Format Forecast Chart",
+        "func": "const payload = msg.payload || {};\nconst list = Array.isArray(payload.forecast) ? payload.forecast : [];\n\nfunction toNumber(v) {\n    const n = Number(v);\n    return Number.isFinite(n) ? n : null;\n}\n\nconst maxSeries = [];\nconst minSeries = [];\n\nfor (const item of list) {\n    const d = String(item.forecastDate || \"\");\n    if (d.length !== 8) {\n        continue;\n    }\n\n    const iso = d.slice(0, 4) + \"-\" + d.slice(4, 6) + \"-\" + d.slice(6, 8) + \"T12:00:00+08:00\";\n    const x = new Date(iso);\n\n    const yMax = toNumber(item.maxTemp);\n    const yMin = toNumber(item.minTemp);\n\n    if (yMax !== null) {\n        maxSeries.push({ x: x, y: yMax });\n    }\n    if (yMin !== null) {\n        minSeries.push({ x: x, y: yMin });\n    }\n}\n\nmsg.payload = [{\n    series: [\"Forecast Max (C)\", \"Forecast Min (C)\"],\n    data: [maxSeries, minSeries],\n    labels: [\"\"]\n}];\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 980,
+        "y": 650,
+        "wires": [
+            [
+                "chart.fc"
+            ]
+        ]
+    },
+    {
+        "id": "chart.fc",
+        "type": "ui_chart",
+        "z": "9f6b2c4a.d1e3f8",
+        "name": "",
+        "group": "ui.group.forecast",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "label": "9-Day Max/Min Temperature",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "MM-DD",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": true,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": "216",
+        "removeOlderPoints": "216",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "colors": [
+            "#d62728",
+            "#1f77b4",
+            "#ff7f0e",
+            "#2ca02c",
+            "#9467bd",
+            "#8c564b",
+            "#e377c2",
+            "#7f7f7f",
+            "#bcbd22"
+        ],
+        "useOldStyle": false,
+        "outputs": 1,
+        "x": 1210,
+        "y": 650,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ui.text.latest",
+        "type": "ui_text",
+        "z": "9f6b2c4a.d1e3f8",
+        "group": "ui.group.heat",
+        "order": 2,
+        "width": 6,
+        "height": 1,
+        "name": "",
+        "label": "Latest Update",
+        "format": "{{msg.payload.latest.updateTime}}",
+        "layout": "row-spread",
+        "className": "",
+        "x": 1210,
+        "y": 590,
+        "wires": []
+    },
+    {
+        "id": "ui.text.risk",
+        "type": "ui_text",
+        "z": "9f6b2c4a.d1e3f8",
+        "group": "ui.group.heat",
+        "order": 3,
+        "width": 6,
+        "height": 1,
+        "name": "",
+        "label": "Heat Stress",
+        "format": "{{msg.payload.latest.heatStress}} ({{msg.payload.latest.riskLevel}})",
+        "layout": "row-spread",
+        "className": "",
+        "x": 1200,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "ui.text.rain",
+        "type": "ui_text",
+        "z": "9f6b2c4a.d1e3f8",
+        "group": "ui.group.rain",
+        "order": 2,
+        "width": 12,
+        "height": 1,
+        "name": "",
+        "label": "Max Rainfall",
+        "format": "{{msg.payload.latest.maxRainfallDistrict}}: {{msg.payload.latest.maxRainfall}} mm",
+        "layout": "row-spread",
+        "className": "",
+        "x": 1210,
+        "y": 650,
+        "wires": []
+    },
+    {
+        "id": "ui.text.corr.temp",
+        "type": "ui_text",
+        "z": "9f6b2c4a.d1e3f8",
+        "group": "ui.group.heat",
+        "order": 4,
+        "width": 6,
+        "height": 1,
+        "name": "",
+        "label": "Corr(Temp,Stress)",
+        "format": "{{msg.payload.corrTempHeatStress}}",
+        "layout": "row-spread",
+        "className": "",
+        "x": 1210,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "ui.text.corr.rain",
+        "type": "ui_text",
+        "z": "9f6b2c4a.d1e3f8",
+        "group": "ui.group.rain",
+        "order": 3,
+        "width": 12,
+        "height": 1,
+        "name": "",
+        "label": "Corr(Rain,Stress)",
+        "format": "{{msg.payload.corrRainHeatStress}}",
+        "layout": "row-spread",
+        "className": "",
+        "x": 1210,
+        "y": 710,
+        "wires": []
+    }
+]
